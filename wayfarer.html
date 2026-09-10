@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WAYFARER — Travel Agent</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --navy: #0D1B2A;
+    --navy-2: #142B41;
+    --amber: #FFB627;
+    --cream: #F2E9DC;
+    --ink: #10151C;
+    --slate: #7C8B9A;
+    --green: #3CB371;
+    --line: rgba(242,233,220,0.14);
+    --radius: 3px;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+
+  /* ---------- BOARD HEADER ---------- */
+  .board{
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+    color: var(--amber);
+    padding: 22px 20px 16px;
+    border-bottom: 6px solid var(--ink);
+  }
+  .board-top{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    max-width: 880px;
+    margin: 0 auto 14px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .board-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size: 26px;
+    letter-spacing: 0.02em;
+    color: var(--cream);
+  }
+  .board-title span{ color: var(--amber); }
+  .board-sub{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--slate);
+    letter-spacing: 0.04em;
+  }
+  .board-rows{
+    max-width: 880px;
+    margin: 0 auto;
+    border-top: 1px solid var(--line);
+  }
+  .board-row-head, .flip-row{
+    display:grid;
+    grid-template-columns: 56px 1fr 96px 46px;
+    gap: 10px;
+    padding: 9px 6px;
+    align-items:center;
+    border-bottom: 1px solid var(--line);
+  }
+  .board-row-head{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--slate);
+    letter-spacing: 0.08em;
+    padding-top: 12px;
+  }
+  .flip-row{
+    cursor:pointer;
+    font-family:'IBM Plex Mono', monospace;
+    background: transparent;
+    transition: background 120ms ease;
+  }
+  .flip-row:hover{ background: rgba(255,182,39,0.06); }
+  .flip-row:hover .cell{ color: var(--cream); }
+  .flip-code{ font-size:13px; font-weight:600; letter-spacing:0.05em; }
+  .flip-label{ font-size:13px; letter-spacing:0.02em; }
+  .flip-status{ font-size:12px; text-align:right; }
+  .flip-status.ready{ color: var(--green); }
+  .flip-status.board{ color: var(--amber); }
+  .flip-gate{ font-size:12px; color: var(--slate); text-align:right; }
+  .cell{
+    display:inline-block;
+    color: var(--cream);
+    opacity: 0.92;
+  }
+  .board-hint{
+    max-width: 880px;
+    margin: 12px auto 0;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--slate);
+    letter-spacing: 0.03em;
+  }
+
+  /* ---------- MAIN ---------- */
+  main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    max-width: 880px;
+    width:100%;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  .chat-window{
+    flex:1;
+    padding: 22px 0 12px;
+    display:flex;
+    flex-direction:column;
+    gap: 14px;
+    min-height: 340px;
+  }
+
+  .empty-state{
+    margin: auto;
+    text-align:center;
+    color: var(--slate);
+    max-width: 360px;
+  }
+  .empty-state .plane{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .empty-state p{ font-size: 13.5px; line-height:1.5; margin:0; }
+
+  .msg{
+    max-width: 78%;
+    display:flex;
+    flex-direction:column;
+    gap: 4px;
+  }
+  .msg.user{ align-self:flex-end; align-items:flex-end; }
+  .msg.agent{ align-self:flex-start; align-items:flex-start; }
+
+  .bubble{
+    padding: 11px 14px;
+    border-radius: var(--radius);
+    font-size: 14.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .msg.user .bubble{
+    background: var(--navy);
+    color: var(--cream);
+    border-top-right-radius: 0;
+  }
+  .msg.agent .bubble{
+    background: #ffffff;
+    border: 1px solid rgba(13,27,42,0.1);
+    border-top-left-radius: 0;
+  }
+  .msg-meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--slate);
+    letter-spacing: 0.04em;
+    padding: 0 2px;
+  }
+
+  .status-line{
+    align-self:flex-start;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--slate);
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    padding: 4px 2px;
+  }
+  .runway{
+    display:flex;
+    gap: 3px;
+  }
+  .runway span{
+    width:5px; height:5px; border-radius:50%;
+    background: var(--slate);
+    animation: blink 1s infinite ease-in-out;
+  }
+  .runway span:nth-child(2){ animation-delay: 0.15s; }
+  .runway span:nth-child(3){ animation-delay: 0.3s; }
+  @keyframes blink{ 0%,80%,100%{ opacity:0.25; } 40%{ opacity:1; background:var(--amber);} }
+
+  /* ---------- INPUT / TICKET STUB ---------- */
+  .stub-wrap{
+    position: sticky;
+    bottom:0;
+    padding: 14px 0 20px;
+    background: linear-gradient(180deg, rgba(242,233,220,0) 0%, var(--cream) 30%);
+  }
+  .stub{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    background:#fff;
+    border: 1px solid rgba(13,27,42,0.15);
+    border-radius: var(--radius);
+    padding: 6px 6px 6px 16px;
+  }
+  .stub::before{
+    content:"";
+    position:absolute;
+    left:-1px; top:50%;
+    width:12px; height:12px;
+    background: var(--cream);
+    border: 1px solid rgba(13,27,42,0.15);
+    border-radius:50%;
+    transform: translate(-50%,-50%);
+  }
+  .stub input{
+    flex:1;
+    border:none;
+    outline:none;
+    font-family:'Inter', sans-serif;
+    font-size: 14.5px;
+    padding: 10px 4px;
+    background: transparent;
+    color: var(--ink);
+  }
+  .stub input::placeholder{ color: var(--slate); }
+  .stub button{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size: 13px;
+    background: var(--navy);
+    color: var(--cream);
+    border:none;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    cursor:pointer;
+    letter-spacing: 0.02em;
+    transition: background 120ms ease;
+  }
+  .stub button:hover{ background: #1c3350; }
+  .stub button:disabled{ opacity:0.5; cursor:default; }
+
+  .foot-note{
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 20px 16px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--slate);
+    text-align:center;
+  }
+
+  @media (max-width: 560px){
+    .board-title{ font-size: 21px; }
+    .board-row-head, .flip-row{ grid-template-columns: 44px 1fr 78px 34px; font-size:11px; }
+    .flip-label{ font-size:12px; }
+    .msg{ max-width: 88%; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="board">
+    <div class="board-top">
+      <div class="board-title">WAYFARER <span>/ DEPARTURES</span></div>
+      <div class="board-sub" id="clock">LOCAL TIME —</div>
+    </div>
+    <div class="board-rows">
+      <div class="board-row-head">
+        <span>CODE</span><span>ROUTE</span><span style="text-align:right">STATUS</span><span style="text-align:right">GATE</span>
+      </div>
+      <div id="flipRows"></div>
+    </div>
+    <div class="board-hint">TAP A ROW TO ASK, OR TYPE YOUR OWN REQUEST BELOW</div>
+  </header>
+
+  <main>
+    <div class="chat-window" id="chatWindow">
+      <div class="empty-state" id="emptyState">
+        <div class="plane">✈ Where to?</div>
+        <p>Ask about flights, hotels, or today's travel news — or tap a row on the board above.</p>
+      </div>
+    </div>
+
+    <div class="stub-wrap">
+      <form class="stub" id="composer">
+        <input id="composerInput" type="text" placeholder="I want to fly from Toronto to Paris in June…" autocomplete="off" />
+        <button type="submit" id="sendBtn">Send</button>
+      </form>
+    </div>
+  </main>
+
+  <div class="foot-note">FRONTEND DEMO — RESPONSES ARE SIMULATED, NOT LIVE DUFFEL / TAVILY / OPENAI CALLS</div>
+
+<script>
+  // ---------- clock ----------
+  function updateClock(){
+    const d = new Date();
+    const opts = { hour:'2-digit', minute:'2-digit', hour12:false };
+    document.getElementById('clock').textContent = 'LOCAL TIME ' + d.toLocaleTimeString([], opts);
+  }
+  updateClock();
+  setInterval(updateClock, 1000 * 30);
+
+  // ---------- split-flap board ----------
+  const ROWS = [
+    { code:'SUM',  label:'Summarize & translate any text', status:'ON TIME', ready:true,  gate:'G1', prompt:'Summarize this in one paragraph, then translate it to Spanish: Electric cars use a battery pack to power an electric motor instead of an internal combustion engine.' },
+    { code:'WEB',  label:'Live news & travel advisories',  status:'ON TIME', ready:true,  gate:'G2', prompt:"What's the latest travel news for Paris right now?" },
+    { code:'FLT',  label:'Flight search — Toronto to Paris', status:'BOARDING', ready:false, gate:'G3', prompt:'Find flights from Toronto to Paris for 2 adults, departing June 1st.' },
+    { code:'STAY', label:'Hotel search — New York City',  status:'BOARDING', ready:false, gate:'G4', prompt:'Find a hotel in NYC from 2025-10-01 to 2025-10-03.' },
+    { code:'CALC', label:'Quick trip math',                status:'ON TIME', ready:true,  gate:'G5', prompt:'What is 128.50 plus 46.25?' },
+  ];
+
+  const FLIP_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  function flipText(el, finalText, delay){
+    const duration = 500;
+    const steps = 8;
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < steps - 1){
+        let scrambled = '';
+        for (let c = 0; c < finalText.length; c++){
+          if (finalText[c] === ' '){ scrambled += ' '; continue; }
+          scrambled += FLIP_CHARS[Math.floor(Math.random() * FLIP_CHARS.length)];
+        }
+        el.textContent = scrambled;
+      } else {
+        el.textContent = finalText;
+        clearInterval(interval);
+      }
+      i++;
+    }, duration / steps);
+  }
+
+  const flipRowsEl = document.getElementById('flipRows');
+  ROWS.forEach((row, idx) => {
+    const div = document.createElement('div');
+    div.className = 'flip-row';
+    div.innerHTML = `
+      <span class="cell flip-code">${''.padEnd(row.code.length,'#')}</span>
+      <span class="cell flip-label">${''.padEnd(row.label.length,'#')}</span>
+      <span class="cell flip-status ${row.ready ? 'ready' : 'board'}">${''.padEnd(row.status.length,'#')}</span>
+      <span class="cell flip-gate">${''.padEnd(row.gate.length,'#')}</span>
+    `;
+    div.addEventListener('click', () => sendMessage(row.prompt));
+    flipRowsEl.appendChild(div);
+
+    const cells = div.querySelectorAll('.cell');
+    setTimeout(() => flipText(cells[0], row.code, 0), idx * 90);
+    setTimeout(() => flipText(cells[1], row.label, 0), idx * 90 + 60);
+    setTimeout(() => flipText(cells[2], row.status, 0), idx * 90 + 120);
+    setTimeout(() => flipText(cells[3], row.gate, 0), idx * 90 + 180);
+  });
+
+  // ---------- chat logic ----------
+  const chatWindow = document.getElementById('chatWindow');
+  const emptyState = document.getElementById('emptyState');
+  const composer = document.getElementById('composer');
+  const composerInput = document.getElementById('composerInput');
+  const sendBtn = document.getElementById('sendBtn');
+
+  function timeNow(){
+    return new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', hour12:false });
+  }
+
+  function appendMessage(role, text){
+    if (emptyState) emptyState.remove();
+    const wrap = document.createElement('div');
+    wrap.className = 'msg ' + role;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    const meta = document.createElement('div');
+    meta.className = 'msg-meta';
+    meta.textContent = (role === 'user' ? 'YOU' : 'WAYFARER') + ' · ' + timeNow();
+    wrap.appendChild(bubble);
+    wrap.appendChild(meta);
+    chatWindow.appendChild(wrap);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    return bubble;
+  }
+
+  function appendStatus(text){
+    const el = document.createElement('div');
+    el.className = 'status-line';
+    el.innerHTML = `<span class="runway"><span></span><span></span><span></span></span> ${text}`;
+    chatWindow.appendChild(el);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    return el;
+  }
+
+  function planResponse(input){
+    const q = input.toLowerCase();
+
+    if (/\bhotel|stay\b/.test(q)){
+      return {
+        steps: ['Routing to search_hotels_tool (Duffel Stays)…', 'Checking availability for the dates given…'],
+        reply:
+`Here's what I found:
+
+  NYC · Oct 1 – Oct 3 (2 nights)
+  1. Harbor View Inn        $189/night   ★ 4.3
+  2. Midtown Loft Suites    $221/night   ★ 4.6
+  3. The Aldous Hotel       $255/night   ★ 4.7
+
+Want me to narrow these by price, rating, or neighborhood?`
+      };
+    }
+    if (/\bflight|fly|flying\b/.test(q)){
+      return {
+        steps: ['Routing to search_flights_tool (Duffel Offer Requests)…', 'Comparing fares across carriers…'],
+        reply:
+`Here are a few options:
+
+  YYZ → CDG · round trip, 2 adults
+  1. Air Canada       $612  ·  nonstop
+  2. Air France       $588  ·  1 stop (LHR)
+  3. Porter Airlines   $645  ·  1 stop (YUL)
+
+Say the word and I'll sort by price, duration, or airline.`
+      };
+    }
+    if (/\bnews|advisory|advisories|safe|safety\b/.test(q)){
+      return {
+        steps: ['Routing to tavily_search_tool…', 'Reading the top results…'],
+        reply:
+`Latest for Paris:
+
+  • No active travel advisories beyond routine caution in crowded areas.
+  • Metro line 12 has weekend maintenance closures through the month.
+  • Museums are running extended summer hours.
+
+Want the sources, or should I fold this into a full trip plan?`
+      };
+    }
+    if (/\btranslate|translation\b/.test(q)){
+      return {
+        steps: ['Routing to translate_step…'],
+        reply:
+`Summary: Electric cars run on a battery-powered motor rather than a combustion engine.
+
+Spanish: Los coches eléctricos funcionan con un motor alimentado por batería en lugar de un motor de combustión.`
+      };
+    }
+    if (/\bsummar/.test(q)){
+      return {
+        steps: ['Routing to summarize_step…'],
+        reply: `Summary: Electric vehicles trade the internal combustion engine for a battery-powered motor, delivering instant torque with zero tailpipe emissions.`
+      };
+    }
+    if (/\bdate\b|today/.test(q)){
+      return {
+        steps: ['Routing to get_current_date_tool…'],
+        reply: `Today's date is ${new Date().toISOString().slice(0,10)}.`
+      };
+    }
+    const mathMatch = q.match(/(-?\d+(?:\.\d+)?)\s*(plus|\+|minus|-)\s*(-?\d+(?:\.\d+)?)/);
+    if (mathMatch){
+      const a = parseFloat(mathMatch[1]);
+      const op = mathMatch[2];
+      const b = parseFloat(mathMatch[3]);
+      const isAdd = op === 'plus' || op === '+';
+      const result = isAdd ? a + b : a - b;
+      return {
+        steps: ['Routing to simple_math_tool…'],
+        reply: `The result of ${a} ${isAdd ? '+' : '-'} ${b} is ${result}.`
+      };
+    }
+
+    return {
+      steps: ['Checking whether a tool call is needed…'],
+      reply: `I can help with that. Try asking about a flight, a hotel, today's travel news, or ask me to summarize or translate something — or tap a row on the departures board above.`
+    };
+  }
+
+  function sendMessage(text){
+    const value = (text !== undefined ? text : composerInput.value).trim();
+    if (!value) return;
+    appendMessage('user', value);
+    composerInput.value = '';
+    sendBtn.disabled = true;
+
+    const plan = planResponse(value);
+    let stepIdx = 0;
+    const statusEl = appendStatus(plan.steps[0]);
+
+    function nextStep(){
+      stepIdx++;
+      if (stepIdx < plan.steps.length){
+        statusEl.querySelector('span:last-child') ? null : null;
+        statusEl.innerHTML = `<span class="runway"><span></span><span></span><span></span></span> ${plan.steps[stepIdx]}`;
+        setTimeout(nextStep, 550);
+      } else {
+        setTimeout(() => {
+          statusEl.remove();
+          appendMessage('agent', plan.reply);
+          sendBtn.disabled = false;
+          composerInput.focus();
+        }, 550);
+      }
+    }
+    setTimeout(nextStep, 550);
+  }
+
+  composer.addEventListener('submit', (e) => {
+    e.preventDefault();
+    sendMessage();
+  });
+</script>
+</body>
+</html>
