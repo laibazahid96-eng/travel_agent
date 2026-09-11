@@ -1,8 +1,0 @@
-streamlit
-langchain
-langgraph
-langchain_openai
-langchain_community
-tavily-python
-requests
-python-dotenv
